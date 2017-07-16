@@ -96,7 +96,7 @@ function _displayDefault() {
   # CURRENT_DIR
   # -----------
   echo -ne "\033]1337;SetKeyLabel=F1=👉 $(echo $(pwd) | awk -F/ '{print $(NF-1)"/"$(NF)}')\a"
-  bindkey -s '^[OP' 'pwd \n'
+  bindkey -s '^[OP' 'la \n'
 
   # GIT
   # ---
