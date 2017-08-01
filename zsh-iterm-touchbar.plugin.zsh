@@ -74,7 +74,7 @@ git_unpushed_unpulled() {
 # F1-12: https://github.com/vmalloc/zsh-config/blob/master/extras/function_keys.zsh
 fnKeys=('^[OP' '^[OQ' '^[OR' '^[OS' '^[[15~' '^[[17~' '^[[18~' '^[[19~' '^[[20~' '^[[21~' '^[[23~' '^[[24~')
 touchBarState=''
-npmScripts=()
+yarnScripts=()
 lastPackageJsonPath=''
 
 function _clearTouchbar() {
@@ -133,28 +133,28 @@ function _displayDefault() {
   # PACKAGE.JSON
   # ------------
   if [[ -f package.json ]]; then
-    echo -ne "\033]1337;SetKeyLabel=F5=⚡️ npm-run\a"
-    bindkey "${fnKeys[5]}" _displayNpmScripts
+    echo -ne "\033]1337;SetKeyLabel=F5=⚡️ yarn-run\a"
+    bindkey "${fnKeys[5]}" _displayyarnScripts
   fi
 }
 
-function _displayNpmScripts() {
+function _displayYarnScripts() {
   # find available npm run scripts only if new directory
   if [[ $lastPackageJsonPath != $(echo "$(pwd)/package.json") ]]; then
     lastPackageJsonPath=$(echo "$(pwd)/package.json")
-    npmScripts=($(node -e "console.log(Object.keys($(npm run --json)).filter(name => !name.includes(':')).sort((a, b) => a.localeCompare(b)).filter((name, idx) => idx < 12).join(' '))"))
+    yarnScripts=($(node -e "console.log(Object.keys($(yarn run --json)).filter(name => !name.includes(':')).sort((a, b) => a.localeCompare(b)).filter((name, idx) => idx < 12).join(' '))"))
   fi
 
   _clearTouchbar
   _unbindTouchbar
 
-  touchBarState='npm'
+  touchBarState='yarn'
 
   fnKeysIndex=1
-  for npmScript in "$npmScripts[@]"; do
+  for yarnScript in "$yarnScripts[@]"; do
     fnKeysIndex=$((fnKeysIndex + 1))
-    bindkey -s $fnKeys[$fnKeysIndex] "npm run $npmScript \n"
-    echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=$npmScript\a"
+    bindkey -s $fnKeys[$fnKeysIndex] "npm run $yarnScript \n"
+    echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=$yarnScript\a"
   done
 
   echo -ne "\033]1337;SetKeyLabel=F1=👈 back\a"
@@ -162,11 +162,11 @@ function _displayNpmScripts() {
 }
 
 zle -N _displayDefault
-zle -N _displayNpmScripts
+zle -N _displayYarnScripts
 
 precmd_iterm_touchbar() {
-  if [[ $touchBarState == 'npm' ]]; then
-    _displayNpmScripts
+  if [[ $touchBarState == 'yarn' ]]; then
+    _displayYarnScripts
   else
     _displayDefault
   fi
