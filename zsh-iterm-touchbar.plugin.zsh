@@ -133,8 +133,8 @@ function _displayDefault() {
   # PACKAGE.JSON
   # ------------
   if [[ -f package.json ]]; then
-    echo -ne "\033]1337;SetKeyLabel=F5=⚡️ yarn-run\a"
-    bindkey "${fnKeys[5]}" _displayyarnScripts
+    echo -ne "\033]1337;SetKeyLabel=F5=⚡️ yarn run\a"
+    bindkey "${fnKeys[5]}" _displayYarnScripts
   fi
 }
 
@@ -142,7 +142,7 @@ function _displayYarnScripts() {
   # find available npm run scripts only if new directory
   if [[ $lastPackageJsonPath != $(echo "$(pwd)/package.json") ]]; then
     lastPackageJsonPath=$(echo "$(pwd)/package.json")
-    yarnScripts=($(node -e "console.log(Object.keys($(yarn run --json)).filter(name => !name.includes(':')).sort((a, b) => a.localeCompare(b)).filter((name, idx) => idx < 12).join(' '))"))
+    yarnScripts=($(node -e "console.log(Object.keys($(npm run --json)).filter(name => !name.includes(':')).sort((a, b) => a.localeCompare(b)).filter((name, idx) => idx < 12).join(' '))"))
   fi
 
   _clearTouchbar
@@ -153,7 +153,7 @@ function _displayYarnScripts() {
   fnKeysIndex=1
   for yarnScript in "$yarnScripts[@]"; do
     fnKeysIndex=$((fnKeysIndex + 1))
-    bindkey -s $fnKeys[$fnKeysIndex] "npm run $yarnScript \n"
+    bindkey -s $fnKeys[$fnKeysIndex] "yarn run $yarnScript \n"
     echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=$yarnScript\a"
   done
 
