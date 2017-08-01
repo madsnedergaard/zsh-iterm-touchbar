@@ -96,7 +96,7 @@ function _displayDefault() {
   # CURRENT_DIR
   # -----------
   echo -ne "\033]1337;SetKeyLabel=F1=👉 $(echo $(pwd) | awk -F/ '{print $(NF-1)"/"$(NF)}')\a"
-  bindkey -s '^[OP' 'la \n'
+  bindkey -s '^[OP' 'ls -la \n'
 
   # GIT
   # ---
@@ -207,8 +207,9 @@ function _displayBranches() {
     tasks=($(cat .rake_tasks |tr '\n' ' '))
 
     for task in $tasks; do
+
       fnKeysIndex=$((fnKeysIndex + 1))
-      _addRakeTask $tasks[$i] $fnKeysIndex
+      _addRakeTask $task $fnKeysIndex
     done
 
     echo -ne "\033]1337;SetKeyLabel=F1=👈 back\a"
@@ -222,15 +223,15 @@ function _addRakeTask() {
   fi
 }
 
-function _rake_does_task_list_need_generating () {
+ _rake_does_task_list_need_generating () {
   [[ ! -f .rake_tasks ]] || [[ Rakefile -nt .rake_tasks ]] || { _is_rails_app && _tasks_changed }
 }
 
-function _is_rails_app () {
+ _is_rails_app () {
   [[ -e "bin/rails" ]] || [[ -e "script/rails" ]]
 }
 
-function _tasks_changed () {
+ _tasks_changed () {
   local -a files
   files=(lib/tasks lib/tasks/**/*(N))
 
@@ -243,11 +244,11 @@ function _tasks_changed () {
   return 1
 }
 
-function _rake_generate () {
+ _rake_generate () {
   rake --silent --tasks | cut -d " " -f 2 > .rake_tasks
 }
 
-function rake_refresh () {
+ rake_refresh () {
   [[ -f .rake_tasks ]] && rm -f .rake_tasks
 
   echo "Generating rake task overview..." >&2
