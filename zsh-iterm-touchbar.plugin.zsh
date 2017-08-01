@@ -72,7 +72,7 @@ git_unpushed_unpulled() {
 }
 
 # F1-12: https://github.com/vmalloc/zsh-config/blob/master/extras/function_keys.zsh
-fnKeys=('^[OP' '^[OQ' '^[OR' '^[OS' '^[[15~' '^[[17~' '^[[18~' '^[[19~' '^[[20~' '^[[21~' '^[[23~' '^[[24~')
+fnKeys=('^[OP' '^[OQ' '^[OR' '^[OS' '^[[15~' '^[[17~' '^[[18~' '^[[19~' '^[[20~' '^[[21~' '^[[23~' '^[[24~' '^[[1;2P'  '^[[1;2Q'  '^[[1;2R'  '^[[1;2S' '^[[15:2~'  '^[[17:2~' '^[[18:2~' '^[[19:2~')
 touchBarState=''
 yarnScripts=()
 lastPackageJsonPath=''
@@ -125,16 +125,31 @@ function _displayDefault() {
     echo -ne "\033]1337;SetKeyLabel=F4=✉️ push\a";
 
     # bind git actions
-    bindkey -s '^[OQ' 'git branch -a \n'
+    bindkey '^[OQ' _displayBranches
     bindkey -s '^[OR' 'git status \n'
     bindkey -s '^[OS' "git push origin $(git_current_branch) \n"
   fi
 
+  fnKeysIndex=5
   # PACKAGE.JSON
   # ------------
   if [[ -f package.json ]]; then
-    echo -ne "\033]1337;SetKeyLabel=F5=⚡️ yarn run\a"
-    bindkey "${fnKeys[5]}" _displayYarnScripts
+    echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=⚡️ yarn run\a"
+    bindkey "${fnKeys[$fnKeysIndex]}" _displayYarnScripts
+    fnKeysIndex=$((fnKeysIndex + 1))
+  fi
+
+  # Rakefile
+  # ------------
+  if [[ -f Rakefile ]]; then
+    if _rake_does_task_list_need_generating; then
+      echo "\nGenerating .rake_tasks..." >&2
+      _rake_generate
+    fi
+
+    echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=⚡️ rake tasks\a"
+    bindkey "${fnKeys[$fnKeysIndex]}" _displayRakeTasks
+    fnKeysIndex=$((fnKeysIndex + 1))
   fi
 }
 
@@ -161,12 +176,99 @@ function _displayYarnScripts() {
   bindkey "${fnKeys[1]}" _displayDefault
 }
 
+function _displayBranches() {
+
+   _clearTouchbar
+   _unbindTouchbar
+
+   touchBarState='gitCheckout'
+
+   fnKeysIndex=1
+   for branch in $(git branch); do
+     if [[ $branch != "*" ]]; then
+       fnKeysIndex=$((fnKeysIndex + 1))
+       bindkey -s $fnKeys[$fnKeysIndex] "git checkout $branch \n"
+       echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=$branch\a"
+     fi
+   done
+
+   echo -ne "\033]1337;SetKeyLabel=F1=👈 back\a"
+   bindkey "${fnKeys[1]}" _displayDefault
+ }
+
+ function _displayRakeTasks() {
+
+    _clearTouchbar
+    _unbindTouchbar
+
+    touchBarState='rakeTasks'
+
+    fnKeysIndex=1
+    tasks=($(cat .rake_tasks |tr '\n' ' '))
+
+    for task in $tasks; do
+      fnKeysIndex=$((fnKeysIndex + 1))
+      _addRakeTask $tasks[$i] $fnKeysIndex
+    done
+
+    echo -ne "\033]1337;SetKeyLabel=F1=👈 back\a"
+    bindkey "${fnKeys[1]}" _displayDefault
+  }
+
+function _addRakeTask() {
+  if (($2 <= 16)); then
+      bindkey -s $fnKeys[$2] "rake $task \n"
+      echo -ne "\033]1337;SetKeyLabel=F$2=$task\a"
+  fi
+}
+
+function _rake_does_task_list_need_generating () {
+  [[ ! -f .rake_tasks ]] || [[ Rakefile -nt .rake_tasks ]] || { _is_rails_app && _tasks_changed }
+}
+
+function _is_rails_app () {
+  [[ -e "bin/rails" ]] || [[ -e "script/rails" ]]
+}
+
+function _tasks_changed () {
+  local -a files
+  files=(lib/tasks lib/tasks/**/*(N))
+
+  for file in $files; do
+    if [[ "$file" -nt .rake_tasks ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+function _rake_generate () {
+  rake --silent --tasks | cut -d " " -f 2 > .rake_tasks
+}
+
+function rake_refresh () {
+  [[ -f .rake_tasks ]] && rm -f .rake_tasks
+
+  echo "Generating rake task overview..." >&2
+  _rake_generate
+  cat .rake_tasks
+}
+
+
 zle -N _displayDefault
 zle -N _displayYarnScripts
+zle -N _displayBranches
+zle -N _displayRakeTasks
+
 
 precmd_iterm_touchbar() {
   if [[ $touchBarState == 'yarn' ]]; then
     _displayYarnScripts
+  elif [[ $touchBarState == 'gitCheckout' ]]; then
+    _displayBranches
+  elif [[ $touchBarState == 'rakeTasks' ]]; then
+    _displayRakeTasks $mainTask
   else
     _displayDefault
   fi
