@@ -21,12 +21,15 @@
     * `⇣` — unpulled commits;
     * `⇡` — unpushed commits.
   * F4 - Push to origin branch (git push origin [branch]) ✉️
-  * F5 - Display `yarn run` scripts from `package.json` ⚡️
-    * Lists available scripts
-    * Runs selected script
-  * F6 - Display `rake tasks` ⚡️
-    * Lists available tasks
-    * Runs selected task
+  * Available depending on context
+    * Docker compose commands ⚡️
+      * Up, top, Build, Down
+    * Display `yarn run` scripts from `package.json` ⚡️
+      * Lists available scripts
+      * Runs selected script
+    * Display `rake tasks` ⚡️
+      * Lists available tasks
+      * Runs selected task
 
 
 ### Requirements

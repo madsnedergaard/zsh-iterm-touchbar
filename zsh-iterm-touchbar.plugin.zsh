@@ -77,17 +77,17 @@ touchBarState=''
 yarnScripts=()
 lastPackageJsonPath=''
 
-function _clearTouchbar() {
+ _clearTouchbar() {
   echo -ne "\033]1337;PopKeyLabels\a"
 }
 
-function _unbindTouchbar() {
+ _unbindTouchbar() {
   for fnKey in "$fnKeys[@]"; do
     bindkey -s "$fnKey" ''
   done
 }
 
-function _displayDefault() {
+ _displayDefault() {
   _clearTouchbar
   _unbindTouchbar
 
@@ -131,6 +131,15 @@ function _displayDefault() {
   fi
 
   fnKeysIndex=5
+
+  # PACKAGE.JSON
+  # ------------
+  if [[ -f docker-compose.yaml ]]; then
+    echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=⚡️ docker \a"
+    bindkey "${fnKeys[$fnKeysIndex]}" _displayDockerComposerOptions
+    fnKeysIndex=$((fnKeysIndex + 1))
+  fi
+
   # PACKAGE.JSON
   # ------------
   if [[ -f package.json ]]; then
@@ -174,7 +183,7 @@ function _displayDefault() {
   fi
 }
 
-function _displayYarnScripts() {
+ _displayYarnScripts() {
   # find available npm run scripts only if new directory
   if [[ $lastPackageJsonPath != $(echo "$(pwd)/package.json") ]]; then
     lastPackageJsonPath=$(echo "$(pwd)/package.json")
@@ -197,7 +206,7 @@ function _displayYarnScripts() {
   bindkey "${fnKeys[1]}" _displayDefault
 }
 
-function _displayBranches() {
+ _displayBranches() {
 
    _clearTouchbar
    _unbindTouchbar
@@ -217,7 +226,7 @@ function _displayBranches() {
    bindkey "${fnKeys[1]}" _displayDefault
  }
 
- function _displayRakeTasks() {
+_displayRakeTasks() {
 
     _clearTouchbar
     _unbindTouchbar
@@ -237,7 +246,7 @@ function _displayBranches() {
     bindkey "${fnKeys[1]}" _displayDefault
   }
 
-function _addRakeTask() {
+_addRakeTask() {
   if (($2 <= 16)); then
       bindkey -s $fnKeys[$2] "rake $task \n"
       echo -ne "\033]1337;SetKeyLabel=F$2=$task\a"
@@ -272,9 +281,30 @@ function _addRakeTask() {
  rake_refresh () {
   [[ -f .rake_tasks ]] && rm -f .rake_tasks
 
-  echo "Generating rake task overview..." >&2
+  echo "generating rake task overview..." >&2
   _rake_generate
   cat .rake_tasks
+}
+
+_displayDockerComposerOptions(){
+  _clearTouchbar
+  _unbindTouchbar
+
+  touchBarState='dockerComposerOptions'
+
+  fnKeysIndex=1
+  tasks=(up stop down build)
+
+  for task in $tasks; do
+
+    fnKeysIndex=$((fnKeysIndex + 1))
+    echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=$task\a"
+    bindkey -s $fnKeys[$fnKeysIndex] "docker-compose $task \n"
+  done
+
+  echo -ne "\033]1337;SetKeyLabel=F1=👈 back\a"
+  bindkey "${fnKeys[1]}" _displayDefault
+
 }
 
 
@@ -282,6 +312,7 @@ zle -N _displayDefault
 zle -N _displayYarnScripts
 zle -N _displayBranches
 zle -N _displayRakeTasks
+zle -N _displayDockerComposerOptions
 
 
 precmd_iterm_touchbar() {
@@ -290,7 +321,9 @@ precmd_iterm_touchbar() {
   elif [[ $touchBarState == 'gitCheckout' ]]; then
     _displayBranches
   elif [[ $touchBarState == 'rakeTasks' ]]; then
-    _displayRakeTasks $mainTask
+    _displayRakeTasks
+  elif [[ $touchBarState == 'dockerComposerOptions' ]]; then
+    _displayDockerComposerOptions
   else
     _displayDefault
   fi
