@@ -139,6 +139,27 @@ function _displayDefault() {
     fnKeysIndex=$((fnKeysIndex + 1))
   fi
 
+  # COMPOSTER.JSON
+  # ------------
+  if [[ -f composer.json ]]; then
+    echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=⚡️ composer\a"
+    if [[ -f composer.lock ]]; then
+      command='composer update \n'
+    else
+      command='composer install \n'
+    fi
+    bindkey -s "${fnKeys[$fnKeysIndex]}" $command
+    fnKeysIndex=$((fnKeysIndex + 1))
+  fi
+
+  # phpunit.xml.dist
+  # ------------
+  if [[ -f phpunit.xml.dist ]]; then
+    echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=⚡️ phpunit\a"
+    bindkey -s "${fnKeys[$fnKeysIndex]}" "phpunit \n"
+    fnKeysIndex=$((fnKeysIndex + 1))
+  fi
+
   # Rakefile
   # ------------
   if [[ -f Rakefile ]]; then
