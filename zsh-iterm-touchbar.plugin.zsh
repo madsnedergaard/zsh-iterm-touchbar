@@ -139,6 +139,15 @@ lastPackageJsonPath=''
       echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=🚂️ rails \a"
       bindkey "${fnKeys[$fnKeysIndex]}" _displayRailsOptions
       fnKeysIndex=$((fnKeysIndex + 1))
+  elif test -e Rakefile ; then
+      if _rake_does_task_list_need_generating; then
+          echo "\nGenerating .rake_tasks..." >&2
+          _rake_generate
+      fi
+      
+      echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=⚡️ rake tasks\a"
+      bindkey "${fnKeys[$fnKeysIndex]}" _displayRakeTasks
+      fnKeysIndex=$((fnKeysIndex + 1))
   fi
 
   # DOCKER-COMPOSE.yaml
@@ -181,14 +190,7 @@ lastPackageJsonPath=''
   # Rakefile
   # ------------
   # if [[ -f Rakefile ]]; then
-  #   if _rake_does_task_list_need_generating; then
-  #     echo "\nGenerating .rake_tasks..." >&2
-  #     _rake_generate
-  #   fi
-
-  #   echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=⚡️ rake tasks\a"
-  #   bindkey "${fnKeys[$fnKeysIndex]}" _displayRakeTasks
-  #   fnKeysIndex=$((fnKeysIndex + 1))
+  #   
   # fi
 }
 
