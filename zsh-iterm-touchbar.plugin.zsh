@@ -166,7 +166,7 @@ lastPackageJsonPath=''
     fnKeysIndex=$((fnKeysIndex + 1))
   fi
 
-  # COMPOSTER.JSON
+  # COMPOSER.JSON
   # ------------
   if [[ -f composer.json ]]; then
     echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=⚡️ composer\a"
@@ -179,19 +179,14 @@ lastPackageJsonPath=''
     fnKeysIndex=$((fnKeysIndex + 1))
   fi
 
-  # phpunit.xml.dist
+  # phpunit.xml
   # ------------
-  if [[ -f phpunit.xml.dist ]]; then
+  if [[ -f phpunit.xml ]]; then
     echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=⚡️ phpunit\a"
     bindkey -s "${fnKeys[$fnKeysIndex]}" "phpunit \n"
     fnKeysIndex=$((fnKeysIndex + 1))
   fi
 
-  # Rakefile
-  # ------------
-  # if [[ -f Rakefile ]]; then
-  #   
-  # fi
 }
 
  _displayYarnScripts() {
