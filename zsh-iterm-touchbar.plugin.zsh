@@ -72,22 +72,22 @@ git_unpushed_unpulled() {
 }
 
 # F1-12: https://github.com/vmalloc/zsh-config/blob/master/extras/function_keys.zsh
-fnKeys=('^[OP' '^[OQ' '^[OR' '^[OS' '^[[15~' '^[[17~' '^[[18~' '^[[19~' '^[[20~' '^[[21~' '^[[23~' '^[[24~')
+fnKeys=('^[OP' '^[OQ' '^[OR' '^[OS' '^[[15~' '^[[17~' '^[[18~' '^[[19~' '^[[20~' '^[[21~' '^[[23~' '^[[24~' '^[[1;2P'  '^[[1;2Q'  '^[[1;2R'  '^[[1;2S' '^[[15:2~'  '^[[17:2~' '^[[18:2~' '^[[19:2~')
 touchBarState=''
-npmScripts=()
+yarnScripts=()
 lastPackageJsonPath=''
 
-function _clearTouchbar() {
+ _clearTouchbar() {
   echo -ne "\033]1337;PopKeyLabels\a"
 }
 
-function _unbindTouchbar() {
+ _unbindTouchbar() {
   for fnKey in "$fnKeys[@]"; do
     bindkey -s "$fnKey" ''
   done
 }
 
-function _displayDefault() {
+ _displayDefault() {
   _clearTouchbar
   _unbindTouchbar
 
@@ -96,7 +96,7 @@ function _displayDefault() {
   # CURRENT_DIR
   # -----------
   echo -ne "\033]1337;SetKeyLabel=F1=👉 $(echo $(pwd) | awk -F/ '{print $(NF-1)"/"$(NF)}')\a"
-  bindkey -s '^[OP' 'la \n'
+  bindkey -s '^[OP' 'ls -la \n'
 
   # GIT
   # ---
@@ -125,48 +125,233 @@ function _displayDefault() {
     echo -ne "\033]1337;SetKeyLabel=F4=✉️ push\a";
 
     # bind git actions
-    bindkey -s '^[OQ' 'git branch -a \n'
+    bindkey '^[OQ' _displayBranches
     bindkey -s '^[OR' 'git status \n'
     bindkey -s '^[OS' "git push origin $(git_current_branch) \n"
+  fi
+
+  fnKeysIndex=5
+
+  # Rails
+  # ------------
+  grep 'rails' 'Gemfile' >/dev/null 2>&1
+  if [ $? -eq 0 ]; then
+      echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=🚂️ rails \a"
+      bindkey "${fnKeys[$fnKeysIndex]}" _displayRailsOptions
+      fnKeysIndex=$((fnKeysIndex + 1))
+  elif test -e Rakefile ; then
+      if _rake_does_task_list_need_generating; then
+          echo "\nGenerating .rake_tasks..." >&2
+          _rake_generate
+      fi
+      
+      echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=⚡️ rake tasks\a"
+      bindkey "${fnKeys[$fnKeysIndex]}" _displayRakeTasks
+      fnKeysIndex=$((fnKeysIndex + 1))
+  fi
+
+  # DOCKER-COMPOSE.yaml
+  # ------------
+  if test -e docker-compose.yaml || test -e docker-compose.yml; then
+    echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=⚡️ docker \a"
+    bindkey "${fnKeys[$fnKeysIndex]}" _displayDockerComposerOptions
+    fnKeysIndex=$((fnKeysIndex + 1))
   fi
 
   # PACKAGE.JSON
   # ------------
   if [[ -f package.json ]]; then
-    echo -ne "\033]1337;SetKeyLabel=F5=⚡️ npm-run\a"
-    bindkey "${fnKeys[5]}" _displayNpmScripts
+    echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=⚡️ yarn run\a"
+    bindkey "${fnKeys[$fnKeysIndex]}" _displayYarnScripts
+    fnKeysIndex=$((fnKeysIndex + 1))
   fi
+
+  # COMPOSER.JSON
+  # ------------
+  if [[ -f composer.json ]]; then
+    echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=⚡️ composer\a"
+    if [[ -f composer.lock ]]; then
+      command='composer update \n'
+    else
+      command='composer install \n'
+    fi
+    bindkey -s "${fnKeys[$fnKeysIndex]}" $command
+    fnKeysIndex=$((fnKeysIndex + 1))
+  fi
+
+  # phpunit.xml
+  # ------------
+  if [[ -f phpunit.xml ]]; then
+    echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=⚡️ phpunit\a"
+    bindkey -s "${fnKeys[$fnKeysIndex]}" "phpunit \n"
+    fnKeysIndex=$((fnKeysIndex + 1))
+  fi
+
 }
 
-function _displayNpmScripts() {
+ _displayYarnScripts() {
   # find available npm run scripts only if new directory
   if [[ $lastPackageJsonPath != $(echo "$(pwd)/package.json") ]]; then
     lastPackageJsonPath=$(echo "$(pwd)/package.json")
-    npmScripts=($(node -e "console.log(Object.keys($(npm run --json)).filter(name => !name.includes(':')).sort((a, b) => a.localeCompare(b)).filter((name, idx) => idx < 12).join(' '))"))
+    yarnScripts=($(node -e "console.log(Object.keys($(npm run --json)).filter(name => !name.includes(':')).sort((a, b) => a.localeCompare(b)).filter((name, idx) => idx < 12).join(' '))"))
   fi
 
   _clearTouchbar
   _unbindTouchbar
 
-  touchBarState='npm'
+  touchBarState='yarn'
 
   fnKeysIndex=1
-  for npmScript in "$npmScripts[@]"; do
+  for yarnScript in "$yarnScripts[@]"; do
     fnKeysIndex=$((fnKeysIndex + 1))
-    bindkey -s $fnKeys[$fnKeysIndex] "npm run $npmScript \n"
-    echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=$npmScript\a"
+    bindkey -s $fnKeys[$fnKeysIndex] "yarn run $yarnScript \n"
+    echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=$yarnScript\a"
   done
 
   echo -ne "\033]1337;SetKeyLabel=F1=👈 back\a"
   bindkey "${fnKeys[1]}" _displayDefault
 }
 
+ _displayBranches() {
+
+   _clearTouchbar
+   _unbindTouchbar
+
+   touchBarState='gitCheckout'
+
+   fnKeysIndex=1
+   for branch in $(git branch); do
+     if [[ $branch != "*" ]]; then
+       fnKeysIndex=$((fnKeysIndex + 1))
+       bindkey -s $fnKeys[$fnKeysIndex] "git checkout $branch \n"
+       echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=$branch\a"
+     fi
+   done
+
+   echo -ne "\033]1337;SetKeyLabel=F1=👈 back\a"
+   bindkey "${fnKeys[1]}" _displayDefault
+ }
+
+_displayRakeTasks() {
+
+    _clearTouchbar
+    _unbindTouchbar
+
+    touchBarState='rakeTasks'
+
+    fnKeysIndex=1
+    tasks=($(cat .rake_tasks |tr '\n' ' '))
+
+    for task in $tasks; do
+
+      fnKeysIndex=$((fnKeysIndex + 1))
+      _addRakeTask $task $fnKeysIndex
+    done
+
+    echo -ne "\033]1337;SetKeyLabel=F1=👈 back\a"
+    bindkey "${fnKeys[1]}" _displayDefault
+  }
+
+_addRakeTask() {
+  if (($2 <= 16)); then
+      bindkey -s $fnKeys[$2] "rake $task \n"
+      echo -ne "\033]1337;SetKeyLabel=F$2=$task\a"
+  fi
+}
+
+ _rake_does_task_list_need_generating () {
+  [[ ! -f .rake_tasks ]] || [[ Rakefile -nt .rake_tasks ]] || { _is_rails_app && _tasks_changed }
+}
+
+ _is_rails_app () {
+  [[ -e "bin/rails" ]] || [[ -e "script/rails" ]]
+}
+
+ _tasks_changed () {
+  local -a files
+  files=(lib/tasks lib/tasks/**/*(N))
+
+  for file in $files; do
+    if [[ "$file" -nt .rake_tasks ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+ _rake_generate () {
+  rake --silent --tasks | cut -d " " -f 2 > .rake_tasks
+}
+
+ rake_refresh () {
+  [[ -f .rake_tasks ]] && rm -f .rake_tasks
+
+  echo "generating rake task overview..." >&2
+  _rake_generate
+  cat .rake_tasks
+}
+
+_displayDockerComposerOptions(){
+  _clearTouchbar
+  _unbindTouchbar
+
+  touchBarState='dockerComposerOptions'
+
+  fnKeysIndex=1
+  tasks=(up stop down build)
+
+  for task in $tasks; do
+
+    fnKeysIndex=$((fnKeysIndex + 1))
+    echo -ne "\033]1337;SetKeyLabel=F$fnKeysIndex=$task\a"
+    bindkey -s $fnKeys[$fnKeysIndex] "docker-compose $task \n"
+  done
+
+  echo -ne "\033]1337;SetKeyLabel=F1=👈 back\a"
+  bindkey "${fnKeys[1]}" _displayDefault
+
+}
+
+_displayRailsOptions(){
+    _clearTouchbar
+    _unbindTouchbar
+
+    touchBarState='railsOptions'
+
+    echo -ne "\033]1337;SetKeyLabel=F2=start\a"
+    bindkey -s $fnKeys[2] "bundle exec rails s \n"
+
+    echo -ne "\033]1337;SetKeyLabel=F3=run tests\a"
+    bindkey -s $fnKeys[3] "bundle exec rake test \n"
+
+    echo -ne "\033]1337;SetKeyLabel=F4=list tasks\a"
+    bindkey -s $fnKeys[4] "bundle exec rake -T \n"
+
+    echo -ne "\033]1337;SetKeyLabel=F5=reset DB\a"
+    bindkey -s $fnKeys[5] "bundle exec rake db:drop && bundle exec db:create && bundle exec db:setup \n"
+
+    echo -ne "\033]1337;SetKeyLabel=F1=👈 back\a"
+    bindkey "${fnKeys[1]}" _displayDefault
+}
+
 zle -N _displayDefault
-zle -N _displayNpmScripts
+zle -N _displayYarnScripts
+zle -N _displayBranches
+zle -N _displayRakeTasks
+zle -N _displayRailsOptions
+zle -N _displayDockerComposerOptions
+
 
 precmd_iterm_touchbar() {
-  if [[ $touchBarState == 'npm' ]]; then
-    _displayNpmScripts
+  if [[ $touchBarState == 'yarn' ]]; then
+    _displayYarnScripts
+  elif [[ $touchBarState == 'gitCheckout' ]]; then
+    _displayBranches
+  elif [[ $touchBarState == 'rakeTasks' ]]; then
+    _displayRakeTasks
+  elif [[ $touchBarState == 'dockerComposerOptions' ]]; then
+    _displayDockerComposerOptions
   else
     _displayDefault
   fi

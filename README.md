@@ -6,10 +6,13 @@
 
 ![preview2](./preview2.gif)
 
-Currently it shows:
+## Features
 
   * F1 - Current directory 👉
+    * runs ls -la
   * F2 - Current git branch 🎋
+    * Lists available braches
+    * allows your to switch to selected branch
   * F3 - Current git repo status 🔥 / 🙌
     * `+` — uncommitted changes in the index;
     * `!` — unstaged changes;
@@ -18,45 +21,52 @@ Currently it shows:
     * `⇣` — unpulled commits;
     * `⇡` — unpushed commits.
   * F4 - Push to origin branch (git push origin [branch]) ✉️
-  * F5 - Display `npm-run` scripts from `package.json` ⚡️
+  * Available depending on context
+    * Docker compose commands ⚡️
+      * Up, top, Build, Down
+    * Display `yarn run` scripts from `package.json` ⚡️
+      * Lists available scripts
+      * Runs selected script
+    * Display `rake tasks` ⚡️
+      * Lists available tasks
+      * Runs selected task
+    * Display `ruby on rails` related options
+    * Run `phpunit` tests
+    * Run `composer install` and `composer update`
+    
+
 
 ### Requirements
 
 * iTerm2 3.1.beta.3 (OS 10.10+) - [Download](https://www.iterm2.com/downloads.html)
 * [zsh](http://www.zsh.org/) shell
-* a zsh-framework like [antigen](http://antigen.sharats.me/) or [zgen](https://github.com/tarjoilija/zgen)
 
 **Into iterm2:** Go into `View -> Customize Tool Bar...` and drag & drop the `Fn` module
 
 ### Installing plugin
 
-#### For oh-my-zsh users
+#### with oh-my-zsh
 
 Clone the repo in your plugins directory:
-
-* `$ cd ${ZSH_CUSTOM1:-$ZSH/custom}/plugins`
-* `$ git clone https://github.com/iam4x/zsh-iterm-touchbar.git`
+```bash
+ $ cd ${ZSH_CUSTOM1:-$ZSH/custom}/plugins`
+ $ git clone https://github.com/popcorn4dinner/zsh-iterm-touchbar.git`
+```
 
 Then add the plugin into your `~/.zshrc`:
-
 ```
 plugins=(... zsh-iterm-touchbar)
 ```
 
-#### For antigen users
-
-Add the following snippet `~/.zshrc` after the line antigen use oh-my-zsh:
-
-```
-antigen theme https://github.com/iam4x/zsh-iterm-touchbar
+#### without framework
+clone the repository inside your zsh plugin folder
+```bash
+ $ git clone https://github.com/popcorn4dinner/zsh-iterm-touchbar.git`
 ```
 
-#### For Zgen users
-
-Add the following line to your `~/.zshrc` where you're adding your other zsh plugins:
-
+Then add the plugin into your `~/.zshrc`:
 ```
-zgen load iam4x/zsh-iterm-touchbar
+source path/to/your/zsh_plugins/zsh-iterm-touchbar/zsh-iterm-touchbar.plugin.zsh
 ```
 
 ### Customize
